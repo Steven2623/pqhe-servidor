@@ -31,7 +31,7 @@ function enviar(id, m) {
   const c = clientes.get(id);
   if (!c) return;
   if (c.ws && c.ws.readyState === c.ws.OPEN) c.ws.send(JSON.stringify(m));
-  else if (!c.ws && c.sala) {
+  else if (c.sala) {
     // Los "datos" del juego se reemplazan solos; los avisos de la sala sí se guardan.
     if (m.t === "datos" && m.d && m.d.t === "estado") return;
     c.pendientes.push(m);
@@ -94,7 +94,7 @@ function mensaje(ctx, m) {
       clientes.delete(id);
       ctx.id = viejoId;
       const sala = salas.get(codigo);
-      enviar(viejoId, { t: "sala", codigo, id: viejoId, host: sala[0] === viejoId, clave: viejo.clave, volvio: true });
+      enviar(viejoId, { t: "sala", codigo, id: viejoId, host: sala[0] === viejoId, clave: viejo.clave, volvio: true, miembros: sala.slice() });
       const pendientes = viejo.pendientes;
       viejo.pendientes = [];
       pendientes.forEach((p) => enviar(viejoId, p));
@@ -142,7 +142,6 @@ function desconectar(id, ws, aPropósito) {
   if (!c || c.ws !== ws) return; // ya volvió con otra conexión
   if (aPropósito || !c.sala || !salas.has(c.sala)) return quitar(id);
   c.ws = null;
-  c.pendientes = [];
   if (c.temporizador) clearTimeout(c.temporizador);
   c.temporizador = setTimeout(() => quitar(id), GRACIA_SEGUNDOS * 1000);
 }
